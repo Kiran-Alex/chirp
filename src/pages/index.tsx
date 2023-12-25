@@ -7,6 +7,7 @@ import { api } from "~/utils/api";
 export default function Home() {
   const user = useUser()
   const hello = api.post.hello.useQuery({ text: "from tRPC" });
+  const {data} = api.post.getAll.useQuery()
 
   return (
     <>
@@ -17,7 +18,7 @@ export default function Home() {
       </Head>
       <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c]">
       {!user.isSignedIn ? <SignIn path="/sign-in" routing="path" signUpUrl="/sign-up" /> : <SignOutButton/>}
-      {}
+      <div>{data?.map((d)=><p key={d.id}>{d.content}</p> )}</div>
       </main>
     </>
   );
