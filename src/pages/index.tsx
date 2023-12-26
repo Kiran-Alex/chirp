@@ -7,6 +7,7 @@ import { RouterOutputs, api } from "~/utils/api";
 import Image from "next/image";
 import LoadingSpinner from "~/components/LoadingSpinner";
 import { useState } from "react";
+import toast from "react-hot-toast";
 
 export default function Home() {
   const user = useUser();
@@ -46,9 +47,15 @@ export default function Home() {
         setInput("");
         utils.post.getAll.invalidate();
       },
+      onError: (e) => {
+        const res = e.data?.zodError?.fieldErrors.content;
+        if (res && res[0]) {
+          toast.error(res[0]);
+        } else {
+          toast.error("Please Try again Later");
+        }
+      },
     });
-
-    console.log(input);
 
     if (!user) {
       return null;
@@ -68,21 +75,37 @@ export default function Home() {
           onChange={(e) => {
             setInput(e.target.value);
           }}
+          onKeyDown={(e) => {
+            if (e.key == "Enter") {
+              e.preventDefault();
+              if (input !== "") {
+                mutate({
+                  content: input,
+                });
+              }
+            }
+          }}
           value={input}
           disabled={isLoading}
         />
-        <button
-        className={isLoading ? "text-slate-500" : "text-slate-50"}
-          disabled={isLoading}
-          onClick={() => {
-            mutate({
-              content: input,
-            });
-          }}
-        >
-          {" "}
-          Post
-        </button>
+        {!isLoading ? (
+          <button
+            className={isLoading ? "text-slate-500" : "text-slate-50"}
+            disabled={isLoading}
+            onClick={() => {
+              mutate({
+                content: input,
+              });
+            }}
+          >
+            {" "}
+            Post
+          </button>
+        ) : (
+          <div className="flex flex-col justify-center">
+            <LoadingSpinner size={18} />
+          </div>
+        )}
       </div>
     );
   };
@@ -93,7 +116,7 @@ export default function Home() {
     if (postsLoading) {
       return (
         <div className="flex grow items-center justify-center text-center">
-          <LoadingSpinner />
+          <LoadingSpinner size={56} />
         </div>
       );
     }
@@ -117,8 +140,8 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main className="flex h-screen  justify-center ">
-        <div className="h-full w-full border-x border-slate-400 md:max-w-2xl">
-          <div className="flex border-b border-slate-400 p-4">
+        <div className="flex h-full w-full flex-col border-x border-slate-400 md:max-w-2xl ">
+          <div className="flex border-b p-4">
             {!user.isSignedIn ? (
               <SignIn path="/sign-in" routing="path" signUpUrl="/sign-up" />
             ) : (
