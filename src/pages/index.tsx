@@ -5,21 +5,18 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { RouterOutputs, api } from "~/utils/api";
 import Image from "next/image";
+import LoadingSpinner from "~/components/LoadingSpinner";
+import { useState } from "react";
 
 export default function Home() {
   const user = useUser();
   dayjs.extend(relativeTime);
-  const hello = api.post.hello.useQuery({ text: "from tRPC" });
-  const { data, isLoading } = api.post.getAll.useQuery();
 
   type PostWithUSer = RouterOutputs["post"]["getAll"][number];
   const Postview = (props: PostWithUSer) => {
     const { post, author } = props;
     return (
-      <div
-        className=" flex flex-row gap-3 border-b border-slate-400 p-4"
-        key={post.id}
-      >
+      <div className="flex gap-3 border-b border-slate-400 p-4" key={post.id}>
         <Image
           alt="profile pic"
           className="h-14 w-14 rounded-full "
@@ -34,15 +31,25 @@ export default function Home() {
               {"• " + dayjs(post.createdAt).fromNow()}
             </span>
           </div>
-          <span> {post.content}</span>
+          <span className="text-xl"> {post.content}</span>
         </div>
       </div>
     );
   };
 
   const CreatePostWizard = () => {
+    const [input, setInput] = useState("");
     const { user } = useUser();
-    console.log(user);
+    const utils = api.useUtils();
+    const { mutate, isLoading } = api.post.create.useMutation({
+      onSuccess: () => {
+        setInput("");
+        utils.post.getAll.invalidate();
+      },
+    });
+
+    console.log(input);
+
     if (!user) {
       return null;
     }
@@ -53,18 +60,54 @@ export default function Home() {
           height={56}
           className="h-14 w-14 rounded-full"
           alt="Profile-image"
-          src={user.imageUrl} 
+          src={user.imageUrl}
         />
         <input
           className="grow bg-transparent outline-none"
           placeholder="Type Emoji's"
+          onChange={(e) => {
+            setInput(e.target.value);
+          }}
+          value={input}
+          disabled={isLoading}
         />
+        <button
+        className={isLoading ? "text-slate-500" : "text-slate-50"}
+          disabled={isLoading}
+          onClick={() => {
+            mutate({
+              content: input,
+            });
+          }}
+        >
+          {" "}
+          Post
+        </button>
       </div>
     );
   };
 
-  if (isLoading) return <div>Loading..</div>;
-  if (!data) return <div>something went wrong </div>;
+  const Feed = () => {
+    const { data, isLoading: postsLoading } = api.post.getAll.useQuery();
+
+    if (postsLoading) {
+      return (
+        <div className="flex grow items-center justify-center text-center">
+          <LoadingSpinner />
+        </div>
+      );
+    }
+
+    if (!data) return <div>something went wrong </div>;
+
+    return (
+      <div className="flex grow flex-col ">
+        {data?.map(({ post, author }) => (
+          <Postview post={post} author={author} key={post.id} />
+        ))}
+      </div>
+    );
+  };
 
   return (
     <>
@@ -82,10 +125,8 @@ export default function Home() {
               <CreatePostWizard />
             )}
           </div>{" "}
-          <div className="flex flex-col">
-            {data?.map(({ post, author }) => (
-              <Postview post={post} author={author} key={post.id} />
-            ))}
+          <div className="flex grow flex-col overflow-y-scroll">
+            <Feed />
           </div>
         </div>
       </main>
