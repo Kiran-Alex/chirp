@@ -115,7 +115,6 @@ const CreatePostWizard: React.FC = () => {
 
 const Feed: React.FC = () => {
   const { data, isLoading: postsLoading } = api.post.getAll.useQuery();
-  console.log("data ; -" + data)
 
   if (postsLoading) {
     return (
