@@ -1,6 +1,6 @@
 import Head from "next/head";
 import Link from "next/link";
-import { SignIn, useUser } from "@clerk/nextjs";
+import { SignIn, SignInButton, useUser,SignedIn } from "@clerk/nextjs";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { RouterOutputs, api } from "~/utils/api";
@@ -115,6 +115,7 @@ const CreatePostWizard: React.FC = () => {
 
 const Feed: React.FC = () => {
   const { data, isLoading: postsLoading } = api.post.getAll.useQuery();
+  console.log("data ; -" + data)
 
   if (postsLoading) {
     return (
@@ -138,7 +139,7 @@ const Feed: React.FC = () => {
 };
 
 export default function Home() {
-  const user = useUser();
+  const {isSignedIn} = useUser();
 
   return (
     <>
@@ -149,16 +150,21 @@ export default function Home() {
       </Head>
       <Layout>
         <div className="flex border-b p-4">
-          {!user.isSignedIn ? (
-            <SignIn path="/sign-in" routing="path" signUpUrl="/sign-up" />
+
+          
+          {!isSignedIn ? (
+            <>
+            <SignInButton/>
+           </>
           ) : (
             <CreatePostWizard />
           )}
         </div>
         <div className="flex grow flex-col overflow-y-scroll">
           <Feed />
-        </div>
+        </div>  
       </Layout>
     </>
   );
 }
+
